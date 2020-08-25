@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace App\Provider;
 
 use App\Controller\HomeController;
+use App\Manager\MovieManager;
 use App\Support\Config;
 use App\Support\ServiceProviderInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -40,7 +41,12 @@ class WebProvider implements ServiceProviderInterface
     protected function defineControllerDi(Container $container): void
     {
         $container->set(HomeController::class, static function (ContainerInterface $container) {
-            return new HomeController($container->get(RouteCollectorInterface::class), $container->get(Environment::class), $container->get(EntityManagerInterface::class));
+            return new HomeController(
+                $container->get(RouteCollectorInterface::class),
+                $container->get(Environment::class),
+                $container->get(EntityManagerInterface::class),
+                $container->get(MovieManager::class)
+            );
         });
     }
 

@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Entity\Movie;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use App\Manager\MovieManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Slim\Exception\HttpBadRequestException;
 use Slim\Interfaces\RouteCollectorInterface;
 use Twig\Environment;
 
@@ -22,63 +19,58 @@ class HomeController
     /**
      * @var RouteCollectorInterface
      */
-    private $routeCollector;
+    private RouteCollectorInterface $routeCollector;
 
     /**
      * @var Environment
      */
-    private $twig;
+    private Environment $twig;
 
     /**
      * @var EntityManagerInterface
      */
-    private $em;
+    private EntityManagerInterface $em;
+    /**
+     * @var MovieManager
+     */
+    private MovieManager $movieManager;
 
     /**
      * HomeController constructor.
      *
      * @param RouteCollectorInterface $routeCollector
-     * @param Environment             $twig
-     * @param EntityManagerInterface  $em
+     * @param Environment $twig
+     * @param EntityManagerInterface $em
+     * @param MovieManager $movieManager
      */
-    public function __construct(RouteCollectorInterface $routeCollector, Environment $twig, EntityManagerInterface $em)
-    {
+    public function __construct(
+        RouteCollectorInterface $routeCollector,
+        Environment $twig,
+        EntityManagerInterface $em,
+        MovieManager $movieManager
+    ) {
         $this->routeCollector = $routeCollector;
         $this->twig = $twig;
         $this->em = $em;
+        $this->movieManager = $movieManager;
     }
 
     /**
      * @param ServerRequestInterface $request
      * @param ResponseInterface      $response
-     *
      * @return ResponseInterface
      *
-     * @throws HttpBadRequestException
      */
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        try {
-            $data = $this->twig->render('home/index.html.twig', [
-                'trailers' => $this->fetchData(),
-            ]);
-        } catch (\Exception $e) {
-            throw new HttpBadRequestException($request, $e->getMessage(), $e);
-        }
+        $movies = $this->movieManager->getAll();
+
+        $data = $this->twig->render('home/index.html.twig', [
+            'trailers' => $movies,
+        ]);
 
         $response->getBody()->write($data);
 
         return $response;
-    }
-
-    /**
-     * @return Collection
-     */
-    protected function fetchData(): Collection
-    {
-        $data = $this->em->getRepository(Movie::class)
-            ->findAll();
-
-        return new ArrayCollection($data);
     }
 }
