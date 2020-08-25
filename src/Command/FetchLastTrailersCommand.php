@@ -147,14 +147,20 @@ class FetchLastTrailersCommand extends Command
             throw new RuntimeException('Could not find \'channel\' element in feed');
         }
         $count = 0;
+        /** @var \SimpleXMLElement $item */
         foreach ($xml->channel->item as $item) {
             if ($count === $quantity) {
                 break;
             }
+
+            $cdata = (string)$item->xpath('content:encoded')[0];
+            $imageLink = $this->getImageLinkFromHTML($cdata);
+
             $movie = $this->getMovieByTitle((string) $item->title);
             $movie->setTitle((string) $item->title)
                 ->setDescription((string) $item->description)
                 ->setLink((string) $item->link)
+                ->setImage($imageLink)
                 ->setPubDate($this->parseDate((string) $item->pubDate))
             ;
 
@@ -198,5 +204,11 @@ class FetchLastTrailersCommand extends Command
         }
 
         return $item;
+    }
+
+    private function getImageLinkFromHTML(string $html)
+    {
+        preg_match('~\<img src="(.*?)"~', $html, $result);
+        return $result[1] ?? null;
     }
 }
