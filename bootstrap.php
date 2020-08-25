@@ -9,6 +9,7 @@ use App\Support\Config;
 use App\Support\ServiceProviderInterface;
 use Symfony\Component\Dotenv\Dotenv;
 use UltraLite\Container\Container;
+use App\Provider\ServiceProvider;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
@@ -27,6 +28,7 @@ $providers = [
     ConsoleCommandProvider::class,
     WebProvider::class,
     RenderProvider::class,
+    ServiceProvider::class
 ];
 
 $container = new Container([
