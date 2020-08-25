@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Provider;
 
-use App\Command\FetchDataCommand;
+use App\Command\FetchLastTrailersCommand;
 use App\Command\RouteListCommand;
 use App\Support\CommandMap;
 use App\Support\ServiceProviderInterface;
@@ -31,11 +31,11 @@ class ConsoleCommandProvider implements ServiceProviderInterface
             return new RouteListCommand($container->get(RouteCollectorInterface::class));
         });
 
-        $container->set(FetchDataCommand::class, static function (ContainerInterface $container) {
-            return new FetchDataCommand($container->get(ClientInterface::class), $container->get(LoggerInterface::class), $container->get(EntityManagerInterface::class));
+        $container->set(FetchLastTrailersCommand::class, static function (ContainerInterface $container) {
+            return new FetchLastTrailersCommand($container->get(ClientInterface::class), $container->get(LoggerInterface::class), $container->get(EntityManagerInterface::class));
         });
 
         $container->get(CommandMap::class)->set(RouteListCommand::getDefaultName(), RouteListCommand::class);
-        $container->get(CommandMap::class)->set(FetchDataCommand::getDefaultName(), FetchDataCommand::class);
+        $container->get(CommandMap::class)->set(FetchLastTrailersCommand::getDefaultName(), FetchLastTrailersCommand::class);
     }
 }

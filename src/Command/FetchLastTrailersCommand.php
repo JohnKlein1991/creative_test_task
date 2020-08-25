@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 2019-06-28.
  */
@@ -15,42 +16,40 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\RuntimeException;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 /**
  * Class FetchDataCommand.
  */
-class FetchDataCommand extends Command
+class FetchLastTrailersCommand extends Command
 {
+    /**
+     * The default source link for trailers
+     */
     private const SOURCE = 'https://trailers.apple.com/trailers/home/rss/newtrailers.rss';
+
+    /**
+     * @var ClientInterface
+     */
+    private ClientInterface $httpClient;
+
+    /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private EntityManagerInterface $doctrine;
 
     /**
      * @var string
      */
     protected static $defaultName = 'fetch:trailers';
-
-    /**
-     * @var ClientInterface
-     */
-    private $httpClient;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
-     * @var string
-     */
-    private $source;
-
-    /**
-     * @var EntityManagerInterface
-     */
-    private $doctrine;
 
     /**
      * FetchDataCommand constructor.
@@ -60,34 +59,55 @@ class FetchDataCommand extends Command
      * @param EntityManagerInterface $em
      * @param string|null            $name
      */
-    public function __construct(ClientInterface $httpClient, LoggerInterface $logger, EntityManagerInterface $em, string $name = null)
-    {
+    public function __construct(
+        ClientInterface $httpClient,
+        LoggerInterface $logger,
+        EntityManagerInterface $em,
+        string $name = null
+    ) {
         parent::__construct($name);
         $this->httpClient = $httpClient;
         $this->logger = $logger;
         $this->doctrine = $em;
     }
 
+    /**
+     *
+     */
     public function configure(): void
     {
         $this
+            ->setName('fetch:trailers')
             ->setDescription('Fetch data from iTunes Movie Trailers')
-            ->addArgument('source', InputArgument::OPTIONAL, 'Overwrite source')
+            ->addOption(
+                'source',
+                's',
+                InputOption::VALUE_OPTIONAL,
+                'The source data link '
+            )
+            ->addOption(
+                'quantity',
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'The quantity of fetching trailers',
+                10
+            )
         ;
     }
 
     /**
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
-     *
      * @return int
+     * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->logger->info(sprintf('Start %s at %s', __CLASS__, (string) date_create()->format(DATE_ATOM)));
-        $source = self::SOURCE;
-        if ($input->getArgument('source')) {
-            $source = $input->getArgument('source');
+        if (is_null($input->getOption('source'))) {
+            $source = self::SOURCE;
+        } else {
+            $source = $input->getOption('source');
         }
 
         if (!is_string($source)) {
@@ -105,36 +125,41 @@ class FetchDataCommand extends Command
             throw new RuntimeException(sprintf('Response status is %d, expected %d', $status, 200));
         }
         $data = $response->getBody()->getContents();
-        $this->processXml($data);
+        $quantity = (int) $input->getOption('quantity');
+        $this->processXml($data, $quantity);
 
         $this->logger->info(sprintf('End %s at %s', __CLASS__, (string) date_create()->format(DATE_ATOM)));
 
-        return 0;
+        return CommandConstants::FINISH_SUCCESS;
     }
 
     /**
      * @param string $data
      *
+     * @param int $quantity
      * @throws \Exception
      */
-    protected function processXml(string $data): void
+    protected function processXml(string $data, int $quantity): void
     {
         $xml = (new \SimpleXMLElement($data))->children();
-//        $namespace = $xml->getNamespaces(true)['content'];
-//        dd((string) $xml->channel->item[0]->children($namespace)->encoded);
 
         if (!property_exists($xml, 'channel')) {
             throw new RuntimeException('Could not find \'channel\' element in feed');
         }
+        $count = 0;
         foreach ($xml->channel->item as $item) {
-            $trailer = $this->getMovie((string) $item->title)
-                ->setTitle((string) $item->title)
+            if ($count === $quantity) {
+                break;
+            }
+            $movie = $this->getMovieByTitle((string) $item->title);
+            $movie->setTitle((string) $item->title)
                 ->setDescription((string) $item->description)
                 ->setLink((string) $item->link)
                 ->setPubDate($this->parseDate((string) $item->pubDate))
             ;
 
-            $this->doctrine->persist($trailer);
+            $this->doctrine->persist($movie);
+            $count++;
         }
 
         $this->doctrine->flush();
@@ -157,7 +182,7 @@ class FetchDataCommand extends Command
      *
      * @return Movie
      */
-    protected function getMovie(string $title): Movie
+    protected function getMovieByTitle(string $title): Movie
     {
         $item = $this->doctrine->getRepository(Movie::class)->findOneBy(['title' => $title]);
 
