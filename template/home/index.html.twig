@@ -4,16 +4,29 @@
 
 {% block content %}
     <div class="container">
-        <h1 class="mt-5 mb-4">{{ trailers | length }} iTunes Movie trailers</h1>
-        <table class="table table-bordered">
-            {% for trailer in trailers %}
-                <div class="card" style="width: 18rem;">
-                    <img class="card-img-top" src="{{ trailer.image }}" alt="Card image cap">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ trailer.title }}</h5>
+        <section class="jumbotron text-center">
+            <div class="container">
+                <h1 class="jumbotron-heading">{{ trailers | length }} iTunes Movie trailers</h1>
+            </div>
+        </section>
+        {% set count = 0 %}
+        {% for trailer in trailers %}
+            {% if count == 0 %}
+                <div class="row">
+            {% endif %}
+                    <div class="col-md-4">
+                        <div class="card mb-4 box-shadow">
+                            <img class="card-img-top" src="{{ trailer.image }}" alt="Card image cap">
+                            <div class="card-body">
+                                <p class="card-text">{{ trailer.title }}</p>
+                            </div>
+                        </div>
                     </div>
+            {% set count = count + 1 %}
+            {% if count == 3 or loop.last %}
                 </div>
-            {% endfor %}
-        </table>
+                {% set count = 0 %}
+            {% endif %}
+        {% endfor %}
     </div>
 {% endblock %}
