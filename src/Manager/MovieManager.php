@@ -4,6 +4,10 @@ namespace App\Manager;
 
 use App\Repository\MovieRepository;
 
+/**
+ * Class MovieManager
+ * @package App\Manager
+ */
 class MovieManager
 {
     /**
@@ -20,8 +24,20 @@ class MovieManager
         $this->movieRepository = $movieRepository;
     }
 
+    /**
+     * @return array
+     */
     public function getAll()
     {
         return $this->movieRepository->findAll();
+    }
+
+    /**
+     * @param int $id
+     * @return object|null
+     */
+    public function getById(int $id)
+    {
+        return $this->movieRepository->find($id);
     }
 }
