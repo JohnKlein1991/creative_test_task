@@ -5,6 +5,9 @@ namespace App\Provider;
 
 use App\Manager\MovieManager;
 use App\Repository\MovieRepository;
+use App\Service\RSSItunesTrailersService;
+use App\Service\RSSTrailersService;
+use App\Support\Config;
 use App\Support\ServiceProviderInterface;
 use Psr\Container\ContainerInterface;
 use UltraLite\Container\Container;
@@ -16,6 +19,12 @@ class ServiceProvider implements ServiceProviderInterface
         $container->set(MovieManager::class, static function (ContainerInterface $container) {
             return new MovieManager(
                 $container->get(MovieRepository::class),
+            );
+        });
+
+        $container->set(RSSTrailersService::class, static function (ContainerInterface $container) {
+            return new RSSItunesTrailersService(
+                $container->get(Config::class)
             );
         });
     }

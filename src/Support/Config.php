@@ -58,6 +58,10 @@ class Config
             $this->config['doctrine'] = $doctrineConfig;
         }
 
+        if (is_readable($dir . '/service.yaml')) {
+            $this->config = array_merge($this->config, Yaml::parseFile($dir . '/service.yaml'));
+        }
+
         $this->config['environment'] = $env;
         $this->config['base_dir'] = $root;
 
