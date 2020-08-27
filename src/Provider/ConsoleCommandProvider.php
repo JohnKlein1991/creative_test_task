@@ -6,6 +6,7 @@ namespace App\Provider;
 
 use App\Command\FetchLastTrailersCommand;
 use App\Command\RouteListCommand;
+use App\Service\RSSTrailersService;
 use App\Support\CommandMap;
 use App\Support\ServiceProviderInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,9 +31,13 @@ class ConsoleCommandProvider implements ServiceProviderInterface
         $container->set(RouteListCommand::class, static function (ContainerInterface $container) {
             return new RouteListCommand($container->get(RouteCollectorInterface::class));
         });
-
         $container->set(FetchLastTrailersCommand::class, static function (ContainerInterface $container) {
-            return new FetchLastTrailersCommand($container->get(ClientInterface::class), $container->get(LoggerInterface::class), $container->get(EntityManagerInterface::class));
+            return new FetchLastTrailersCommand(
+                $container->get(ClientInterface::class),
+                $container->get(LoggerInterface::class),
+                $container->get(EntityManagerInterface::class),
+                $container->get(RSSTrailersService::class)
+            );
         });
 
         $container->get(CommandMap::class)->set(RouteListCommand::getDefaultName(), RouteListCommand::class);
