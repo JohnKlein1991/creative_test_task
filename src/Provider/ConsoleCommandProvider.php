@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Provider;
 
+use App\Command\FetchDataCommand;
 use App\Command\FetchLastTrailersCommand;
 use App\Command\RouteListCommand;
 use App\Service\RSSTrailersService;
@@ -40,7 +41,16 @@ class ConsoleCommandProvider implements ServiceProviderInterface
             );
         });
 
+        $container->set(FetchDataCommand::class, static function (ContainerInterface $container) {
+            return new FetchDataCommand(
+                $container->get(ClientInterface::class),
+                $container->get(LoggerInterface::class),
+                $container->get(EntityManagerInterface::class)
+            );
+        });
+
         $container->get(CommandMap::class)->set(RouteListCommand::getDefaultName(), RouteListCommand::class);
         $container->get(CommandMap::class)->set(FetchLastTrailersCommand::getDefaultName(), FetchLastTrailersCommand::class);
+        $container->get(CommandMap::class)->set(FetchDataCommand::getDefaultName(), FetchDataCommand::class);
     }
 }
