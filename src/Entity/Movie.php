@@ -9,6 +9,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Index;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\MovieRepository")
@@ -27,30 +28,35 @@ final class Movie
     /**
      * @var string|null
      * @ORM\Column()
+     * @Assert\NotBlank()
      */
     private $title;
 
     /**
      * @var string|null
      * @ORM\Column()
+     * @Assert\NotBlank()
      */
     private $link;
 
     /**
      * @var string|null
      * @ORM\Column(type="text")
+     * @Assert\NotBlank()
      */
     private $description;
 
     /**
      * @var \DateTime|null
      * @ORM\Column(type="datetime", name="pub_date")
+     * @Assert\NotBlank()
      */
     private $pubDate;
 
     /**
      * @var string|null
      * @ORM\Column(nullable=true)
+     * @Assert\NotBlank()
      */
     private $image;
 
