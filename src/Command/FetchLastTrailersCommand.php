@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Entity\Movie;
+use App\Exception\ValidationException;
+use App\Repository\MovieRepository;
 use App\Service\RSSTrailersService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Client\ClientInterface;
@@ -40,6 +42,10 @@ class FetchLastTrailersCommand extends Command
      * @var RSSTrailersService
      */
     private RSSTrailersService $RSSTrailersService;
+    /**
+     * @var MovieRepository
+     */
+    private MovieRepository $movieRepository;
 
     /**
      * FetchDataCommand constructor.
@@ -48,6 +54,7 @@ class FetchLastTrailersCommand extends Command
      * @param LoggerInterface $logger
      * @param EntityManagerInterface $em
      * @param RSSTrailersService $RSSTrailersService
+     * @param MovieRepository $movieRepository
      * @param string|null $name
      */
     public function __construct(
@@ -55,6 +62,7 @@ class FetchLastTrailersCommand extends Command
         LoggerInterface $logger,
         EntityManagerInterface $em,
         RSSTrailersService $RSSTrailersService,
+        MovieRepository $movieRepository,
         string $name = null
     ) {
         parent::__construct($name);
@@ -62,6 +70,7 @@ class FetchLastTrailersCommand extends Command
         $this->logger = $logger;
         $this->em = $em;
         $this->RSSTrailersService = $RSSTrailersService;
+        $this->movieRepository = $movieRepository;
     }
 
     /**
@@ -111,10 +120,17 @@ class FetchLastTrailersCommand extends Command
             if ($count === $quantity) {
                 break;
             }
+            $title = $node->getElementsByTagName('title')->item(0)->nodeValue;
 
-            $movie = new Movie();
+            $movie = $this->movieRepository->findOneBy([
+                'title' => $title
+            ]);
+
+            if (is_null($movie)) {
+                $movie = new Movie();
+            }
             $movie
-                ->setTitle($node->getElementsByTagName('title')->item(0)->nodeValue)
+                ->setTitle($title)
                 ->setDescription($node->getElementsByTagName('description')->item(0)->nodeValue)
                 ->setLink($node->getElementsByTagName('link')->item(0)->nodeValue)
                 ->setPubDate(
@@ -124,7 +140,18 @@ class FetchLastTrailersCommand extends Command
             $imageLink = $this->getImageLinkFromTextContent($textContent);
             $movie->setImage($imageLink);
 
-            $this->em->persist($movie);
+            try {
+                $this->em->persist($movie);
+            } catch (ValidationException $e) {
+                $this->logger->error(
+                    sprintf(
+                        'The validation exception for movie with title="%s": %s',
+                        $title,
+                        $e->getMessage()
+                    )
+                );
+            }
+
             $progressBar->advance();
             $count++;
         }

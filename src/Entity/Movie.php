@@ -7,13 +7,14 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Exception\NotBlankValidationException;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Index;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * @ORM\Entity(repositoryClass="App\Repository\MovieRepository")
  * @ORM\Table(name="movie", indexes={@Index(columns={"title"})})
+ * @ORM\HasLifecycleCallbacks
  */
 final class Movie
 {
@@ -28,35 +29,30 @@ final class Movie
     /**
      * @var string|null
      * @ORM\Column()
-     * @Assert\NotBlank()
      */
     private $title;
 
     /**
      * @var string|null
      * @ORM\Column()
-     * @Assert\NotBlank()
      */
     private $link;
 
     /**
      * @var string|null
      * @ORM\Column(type="text")
-     * @Assert\NotBlank()
      */
     private $description;
 
     /**
      * @var \DateTime|null
      * @ORM\Column(type="datetime", name="pub_date")
-     * @Assert\NotBlank()
      */
     private $pubDate;
 
     /**
      * @var string|null
      * @ORM\Column(nullable=true)
-     * @Assert\NotBlank()
      */
     private $image;
 
@@ -166,5 +162,26 @@ final class Movie
         $this->pubDate = $pubDate;
 
         return $this;
+    }
+
+    /**
+     * @ORM\PrePersist
+     * @ORM\PreUpdate
+     * @throws NotBlankValidationException
+     */
+    public function validate()
+    {
+        $notBlankFields = [
+            'title',
+            'description',
+            'link',
+            'pubDate',
+            'image',
+        ];
+        foreach ($notBlankFields as $field) {
+            if (is_null($this->$field) || empty($this->$field)) {
+                throw new NotBlankValidationException(sprintf('The field "%s" cannot be blank', $field));
+            }
+        }
     }
 }

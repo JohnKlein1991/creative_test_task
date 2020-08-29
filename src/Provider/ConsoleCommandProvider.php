@@ -7,6 +7,7 @@ namespace App\Provider;
 use App\Command\FetchDataCommand;
 use App\Command\FetchLastTrailersCommand;
 use App\Command\RouteListCommand;
+use App\Repository\MovieRepository;
 use App\Service\RSSTrailersService;
 use App\Support\CommandMap;
 use App\Support\ServiceProviderInterface;
@@ -37,7 +38,8 @@ class ConsoleCommandProvider implements ServiceProviderInterface
                 $container->get(ClientInterface::class),
                 $container->get(LoggerInterface::class),
                 $container->get(EntityManagerInterface::class),
-                $container->get(RSSTrailersService::class)
+                $container->get(RSSTrailersService::class),
+                $container->get(MovieRepository::class)
             );
         });
 
@@ -49,8 +51,17 @@ class ConsoleCommandProvider implements ServiceProviderInterface
             );
         });
 
-        $container->get(CommandMap::class)->set(RouteListCommand::getDefaultName(), RouteListCommand::class);
-        $container->get(CommandMap::class)->set(FetchLastTrailersCommand::getDefaultName(), FetchLastTrailersCommand::class);
-        $container->get(CommandMap::class)->set(FetchDataCommand::getDefaultName(), FetchDataCommand::class);
+        $container->get(CommandMap::class)->set(
+            RouteListCommand::getDefaultName(),
+            RouteListCommand::class
+        );
+        $container->get(CommandMap::class)->set(
+            FetchLastTrailersCommand::getDefaultName(),
+            FetchLastTrailersCommand::class
+        );
+        $container->get(CommandMap::class)->set(
+            FetchDataCommand::getDefaultName(),
+            FetchDataCommand::class
+        );
     }
 }
