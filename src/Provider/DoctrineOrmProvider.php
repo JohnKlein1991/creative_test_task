@@ -8,7 +8,9 @@ declare(strict_types=1);
 namespace App\Provider;
 
 use App\Entity\Movie;
+use App\Entity\User;
 use App\Repository\MovieRepository;
+use App\Repository\UserRepository;
 use App\Support\Config;
 use App\Support\ServiceProviderInterface;
 use Doctrine\Common\Annotations\AnnotationReader;
@@ -60,6 +62,13 @@ class DoctrineOrmProvider implements ServiceProviderInterface
             return new MovieRepository(
                 $container->get(EntityManagerInterface::class),
                 $container->get(EntityManagerInterface::class)->getClassMetadata(Movie::class)
+            );
+        });
+
+        $container->set(UserRepository::class, static function (ContainerInterface $container) {
+            return new UserRepository(
+                $container->get(EntityManagerInterface::class),
+                $container->get(EntityManagerInterface::class)->getClassMetadata(User::class)
             );
         });
     }
