@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Manager\MovieManager;
-use Aura\Auth\Auth;
+use App\Repository\UserRepository;
+use App\Service\AuthService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -36,9 +37,13 @@ class HomeController
      */
     private MovieManager $movieManager;
     /**
-     * @var Auth
+     * @var AuthService
      */
-    private Auth $authService;
+    private AuthService $authService;
+    /**
+     * @var UserRepository
+     */
+    private UserRepository $userRepository;
 
     /**
      * HomeController constructor.
@@ -47,20 +52,23 @@ class HomeController
      * @param Environment $twig
      * @param EntityManagerInterface $em
      * @param MovieManager $movieManager
-     * @param Auth $authService
+     * @param AuthService $authService
+     * @param UserRepository $userRepository
      */
     public function __construct(
         RouteCollectorInterface $routeCollector,
         Environment $twig,
         EntityManagerInterface $em,
         MovieManager $movieManager,
-        Auth $authService
+        AuthService $authService,
+        UserRepository $userRepository
     ) {
         $this->routeCollector = $routeCollector;
         $this->twig = $twig;
         $this->em = $em;
         $this->movieManager = $movieManager;
         $this->authService = $authService;
+        $this->userRepository = $userRepository;
     }
 
     /**
@@ -73,8 +81,16 @@ class HomeController
     {
         $movies = $this->movieManager->getAll();
 
+        $user = null;
+        if (!is_null($this->authService->getUsername())) {
+            $user = $this->userRepository->findOneBy([
+                'username' => $this->authService->getUsername()
+            ]);
+        }
+
         $data = $this->twig->render('home/index.html.twig', [
             'trailers' => $movies,
+            'user' => $user
         ]);
 
         $response->getBody()->write($data);

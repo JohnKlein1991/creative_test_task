@@ -6,19 +6,22 @@
 
 {% block content %}
     <h2>Регистрация пользователя</h2>
-    <form>
+
+    {% include 'error_block.html.twig' %}
+
+    <form method="post">
         <div class="form-group">
             <label for="username">Имя пользователя</label>
             <input type="text" name="username" class="form-control" id="username" placeholder="username">
         </div>
         <div class="form-group">
             <label for="password">Пароль</label>
-            <input type="password" name="password_confirm" class="form-control" id="password" placeholder="123456">
+            <input type="password" name="password" class="form-control" id="password" placeholder="123456">
         </div>
         <div class="form-group">
             <label for="password_confirm">Пароль еще раз</label>
             <input type="password" name="password_confirm" class="form-control" id="password_confirm" placeholder="123456">
         </div>
-        <button type="submit" class="btn btn-primary">Войти</button>
+        <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
     </form>
 {% endblock %}

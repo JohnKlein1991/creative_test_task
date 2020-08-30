@@ -2,10 +2,12 @@
 
 namespace App\Controller;
 
-use Aura\Auth\Auth;
+use App\Entity\User;
+use App\Repository\UserRepository;
+use App\Service\AuthService;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Slim\Interfaces\RouteCollectorInterface;
 use Twig\Environment;
 
 /**
@@ -15,25 +17,48 @@ use Twig\Environment;
 class AuthController
 {
     /**
-     * @var Auth
+     * @var AuthService
      */
-    private Auth $authService;
+    private AuthService $authService;
     /**
      * @var Environment
      */
     private Environment $twig;
 
     /**
+     * @var string[]
+     */
+    private $requiredRegisterFields = [
+        'username',
+        'password',
+        'password_confirm'
+    ];
+    /**
+     * @var UserRepository
+     */
+    private UserRepository $userRepository;
+    /**
+     * @var EntityManagerInterface
+     */
+    private EntityManagerInterface $em;
+
+    /**
      * AuthController constructor.
-     * @param Auth $authService
+     * @param AuthService $authService
      * @param Environment $twig
+     * @param UserRepository $userRepository
+     * @param EntityManagerInterface $em
      */
     public function __construct(
-        Auth $authService,
-        Environment $twig
+        AuthService $authService,
+        Environment $twig,
+        UserRepository $userRepository,
+        EntityManagerInterface $em
     ) {
         $this->authService = $authService;
         $this->twig = $twig;
+        $this->userRepository = $userRepository;
+        $this->em = $em;
     }
 
     /**
@@ -55,9 +80,57 @@ class AuthController
      * @param ResponseInterface $response
      * @return ResponseInterface
      */
-    public function register(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
-    {
-        $data = $this->twig->render('auth/register.html.twig');
+    public function register(
+        ServerRequestInterface $request,
+        ResponseInterface $response
+    ): ResponseInterface {
+        $errors = [];
+
+        if ($request->getMethod() === 'POST') {
+            $requestBody = $request->getParsedBody();
+            $username = $requestBody['username'] ?? null;
+            $password = $requestBody['password'] ?? null;
+            $passwordConfirm = $requestBody['password_confirm'] ?? null;
+
+            foreach ($this->requiredRegisterFields as $field) {
+                if (is_null($requestBody[$field]) || empty($requestBody[$field])) {
+                    $errors[] = sprintf('Поле "%s" обязательно к заполнению', $field);
+                }
+            }
+
+            if ($password !== $passwordConfirm) {
+                $errors[] = 'Пароли должны совпадать';
+            }
+
+            $userWithTheSameName = $this->userRepository->findOneBy([
+                'username' => $username
+            ]);
+            if (!is_null($userWithTheSameName)) {
+                $errors[] = 'Пользователь с таким именем уже существует';
+            }
+
+            if (empty($errors)) {
+                $user = new User();
+                $user
+                    ->setUsername($username)
+                    ->setPasswordHash(password_hash($password, PASSWORD_DEFAULT))
+                    ->setCreatedAt(new \DateTime())
+                    ->setUpdatedAt(new \DateTime())
+                ;
+
+                $this->em->persist($user);
+                $this->em->flush();
+
+                $this->authService->login($username);
+
+                $response->withStatus(302);
+                return $response->withHeader('Location', '/');
+            }
+        }
+
+        $data = $this->twig->render('auth/register.html.twig', [
+            'errors' => $errors
+        ]);
 
         $response->getBody()->write($data);
 
@@ -71,7 +144,7 @@ class AuthController
      */
     public function logout(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $this->authService->setStatus(false);
+        $this->authService->logout();
 
         $response->withStatus(302);
 
