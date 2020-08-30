@@ -8,4 +8,29 @@ movie:
   path: movie/{id}
   controller: App\Controller\MovieController
   action: show
+register_form_show:
+  method: 'get'
+  path: register
+  controller: App\Controller\AuthController
+  action: register
+register_form_send:
+  method: 'post'
+  path: register
+  controller: App\Controller\AuthController
+  action: register
+login_form_show:
+  method: 'get'
+  path: login
+  controller: App\Controller\AuthController
+  action: login
+login_form_send:
+  method: 'post'
+  path: login
+  controller: App\Controller\AuthController
+  action: login
+logout:
+  method: 'get'
+  path: logout
+  controller: App\Controller\AuthController
+  action: logout
 

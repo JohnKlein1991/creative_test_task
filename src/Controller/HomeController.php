@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Manager\MovieManager;
+use Aura\Auth\Auth;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -34,6 +35,10 @@ class HomeController
      * @var MovieManager
      */
     private MovieManager $movieManager;
+    /**
+     * @var Auth
+     */
+    private Auth $authService;
 
     /**
      * HomeController constructor.
@@ -42,17 +47,20 @@ class HomeController
      * @param Environment $twig
      * @param EntityManagerInterface $em
      * @param MovieManager $movieManager
+     * @param Auth $authService
      */
     public function __construct(
         RouteCollectorInterface $routeCollector,
         Environment $twig,
         EntityManagerInterface $em,
-        MovieManager $movieManager
+        MovieManager $movieManager,
+        Auth $authService
     ) {
         $this->routeCollector = $routeCollector;
         $this->twig = $twig;
         $this->em = $em;
         $this->movieManager = $movieManager;
+        $this->authService = $authService;
     }
 
     /**

@@ -7,11 +7,13 @@ declare(strict_types=1);
 
 namespace App\Provider;
 
+use App\Controller\AuthController;
 use App\Controller\HomeController;
 use App\Controller\MovieController;
 use App\Manager\MovieManager;
 use App\Support\Config;
 use App\Support\ServiceProviderInterface;
+use Aura\Auth\Auth;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Container\ContainerInterface;
 use Slim\Interfaces\RouteCollectorInterface;
@@ -46,7 +48,8 @@ class WebProvider implements ServiceProviderInterface
                 $container->get(RouteCollectorInterface::class),
                 $container->get(Environment::class),
                 $container->get(EntityManagerInterface::class),
-                $container->get(MovieManager::class)
+                $container->get(MovieManager::class),
+                $container->get(Auth::class)
             );
         });
 
@@ -56,6 +59,13 @@ class WebProvider implements ServiceProviderInterface
                 $container->get(Environment::class),
                 $container->get(EntityManagerInterface::class),
                 $container->get(MovieManager::class)
+            );
+        });
+
+        $container->set(AuthController::class, static function (ContainerInterface $container) {
+            return new AuthController(
+                $container->get(Auth::class),
+                $container->get(Environment::class)
             );
         });
     }
