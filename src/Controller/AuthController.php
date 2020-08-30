@@ -33,6 +33,14 @@ class AuthController
         'password',
         'password_confirm'
     ];
+
+    /**
+     * @var string[]
+     */
+    private $requiredLoginFields = [
+        'username',
+        'password',
+    ];
     /**
      * @var UserRepository
      */
@@ -68,7 +76,40 @@ class AuthController
      */
     public function login(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $data = $this->twig->render('auth/login.html.twig');
+        $errors = [];
+
+        if ($request->getMethod() === 'POST') {
+            $requestBody = $request->getParsedBody();
+            $username = $requestBody['username'] ?? null;
+            $password = $requestBody['password'] ?? null;
+
+            foreach ($this->requiredLoginFields as $field) {
+                if (is_null($requestBody[$field]) || empty($requestBody[$field])) {
+                    $errors[] = sprintf('Поле "%s" обязательно к заполнению', $field);
+                }
+            }
+
+            /** @var User|null $user */
+            $user = $this->userRepository->findOneBy([
+                'username' => $username
+            ]);
+            if (is_null($user)) {
+                $errors[] = 'Неправильный логин и/или пароль';
+            } elseif (!password_verify($password, $user->getPasswordHash())) {
+                $errors[] = 'Неправильный логин и/или пароль';
+            }
+
+            if (empty($errors)) {
+                $this->authService->login($username);
+
+                $response->withStatus(302);
+                return $response->withHeader('Location', '/');
+            }
+        }
+
+        $data = $this->twig->render('auth/login.html.twig', [
+            'errors' => $errors
+        ]);
 
         $response->getBody()->write($data);
 

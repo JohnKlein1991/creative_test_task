@@ -6,6 +6,9 @@
 
 {% block content %}
     <h2>Вход</h2>
+
+    {% include 'error_block.html.twig' %}
+
     <form method="post">
         <div class="form-group">
             <label for="username">Имя пользователя</label>
